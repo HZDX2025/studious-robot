@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>汉责工作室 - Hanze Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入中文字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+    <!-- Import Map: 定义模块路径，使用 ESM 模块化加载，解决依赖冲突 -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+      }
+    }
+    </script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b; /* zinc-950 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 自定义书法字体 */
+        .font-shufa {
+            font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', serif;
+        }
+        /* 竖排文字 */
+        .writing-vertical-rl { 
+            writing-mode: vertical-rl; 
+        }
+        /* 动画关键帧 */
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-in { animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-shake { animation: shake 0.3s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- data-type="module" 允许在 Babel 中使用 import 语法 -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Search, User, Star, Briefcase, BadgeCheck, X, ThumbsUp, MessageCircle, MapPin, 
+            Sparkles, Phone, Users, LayoutGrid, Building2, Crown, Gavel, Quote, Pencil, 
+            Save, RotateCcw, ShieldAlert, LogOut, Settings, CheckCircle2, AlertCircle, 
+            Clock, Lock, KeyRound, ChevronRight, ArrowLeft, Plus, Tag, Camera, RefreshCw, 
+            Image as ImageIcon, Upload, AlertTriangle, Edit3 
+        } from 'lucide-react';
+
+        // --- 数据与配置 ---
+
+        const AVAILABLE_TAGS = [
+            "严格", "温柔", "陪伴", "树洞", 
+            "减肥最强", "学习最强", 
+            "考公达人", "考编达人", "考教资", "考医资监督", 
+            "训诫"
+        ];
+
+        const INITIAL_CONFIG = {
+            landing: {
+                mainTitle: "汉责",
+                stampText: "督学",
+                subTitle: "Studio Team",
+                description: "以责为重，以墨为锋。\n点击屏幕，查阅核心团队成员档案。",
+                enterButton: "进入督学",
+                footer: "© 2024 HANZE STUDIO"
+            },
+            header: {
+                title: "汉责监督团队",
+                subtitle: "HANZE STUDIO TEAM"
+            },
+            banner: {
+                visitorTitle: "团队架构一览",
+                visitorDesc: "分工明确，各司其职。点击卡片查看详情。",
+                adminTitle: "后台管理面板",
+                adminDesc: "点击卡片可修改成员简介、更新在岗状态、更改头像。"
+            },
+            sections: {
+                bossTitle: "BOSS 监督员",
+                bossSubtitle: "战略规划 / 顶层设计 / 最终决策",
+                strictTitle: "严厉监督员",
+                strictSubtitle: "标准落地 / 严格审核 / 铁面无私"
+            }
+        };
+
+        const INITIAL_TEAM = [
+            {
+                id: "HZ-001",
+                name: "李华",
+                category: "boss",
+                role: "工作室主理人",
+                department: "核心决策层",
+                status: "available",
+                rating: 5.0,
+                projectCount: 128,
+                experience: "10年资历",
+                location: "主理人办公室 (Room 101)",
+                tags: ["训诫", "严格", "考公达人"],
+                bio: "汉责工作室创始人，拥有十年行业深耕经验。作为团队的精神领袖，掌控工作室整体发展方向，拥有绝对的决策权。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=LiHua&backgroundColor=ffdfbf&clothing=blazerAndShirt"
+            },
+            {
+                id: "HZ-002",
+                name: "王建国",
+                category: "boss",
+                role: "联合创始人 / 技术总监",
+                department: "核心决策层",
+                status: "busy",
+                rating: 4.9,
+                projectCount: 95,
+                experience: "15年资历",
+                location: "技术研发中心",
+                tags: ["考编达人", "学习最强", "严格"],
+                bio: "工作室技术底层的奠基人。对待技术一丝不苟，以极高的标准要求团队，是工作室质量的坚实后盾。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Wang&backgroundColor=b6e3f4&clothing=collarAndSweater"
+            },
+            {
+                id: "HZ-004",
+                name: "陈志强",
+                category: "strict",
+                role: "首席执行官",
+                department: "严厉执行组",
+                status: "away",
+                rating: 4.8,
+                projectCount: 150,
+                experience: "6年资历",
+                location: "项目现场 / 外勤",
+                tags: ["减肥最强", "训诫", "严格"],
+                bio: "以严厉著称的现场管理者。在项目执行过程中容不得半点沙子，确保每一个细节都严格符合标准。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chen&backgroundColor=d1d4f9"
+            },
+            {
+                id: "HZ-003",
+                name: "张雅婷",
+                category: "strict",
+                role: "高级客户经理",
+                department: "严厉执行组",
+                status: "available",
+                rating: 5.0,
+                projectCount: 210,
+                experience: "8年资历",
+                location: "接待洽谈区",
+                tags: ["温柔", "陪伴", "树洞"],
+                bio: "虽然外表亲和，但在合同条款和原则问题上寸步不让，最大程度保障工作室与客户双方的权益。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zhang&backgroundColor=ffd5dc&clothing=shirt"
+            },
+            {
+                id: "HZ-005",
+                name: "赵敏",
+                category: "strict",
+                role: "设计审核总监",
+                department: "严厉执行组",
+                status: "available",
+                rating: 4.9,
+                projectCount: 88,
+                experience: "7年资历",
+                location: "创意工坊",
+                tags: ["考医资监督", "学习最强", "严格"],
+                bio: "工作室的“魔鬼审核”。对设计稿的要求近乎苛刻，任何瑕疵都逃不过她的眼睛，确保出品即精品。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zhao&backgroundColor=c0aede"
+            },
+            {
+                id: "HZ-006",
+                name: "刘伟",
+                category: "strict",
+                role: "纪律监察专员",
+                department: "严厉执行组",
+                status: "available",
+                rating: 4.6,
+                projectCount: 15,
+                experience: "1年资历",
+                location: "综合办公区",
+                tags: ["考教资", "陪伴", "树洞"],
+                bio: "负责监督内部流程的合规性。虽然是新人，但执行起规章制度来一丝不苟，确保团队高效运转。",
+                photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Liu&backgroundColor=e1e1e1"
+            }
+        ];
+
+        const STATUS_OPTIONS = [
+            { value: 'available', label: '✨ 接受预约', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+            { value: 'busy', label: '🔥 项目忙碌', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+            { value: 'away', label: '☕ 暂时离开', color: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20' }
+        ];
+
+        // 预设管理员密码
+        const ADMIN_PASSWORD = "admin888";
+
+        // --- 组件 ---
+
+        const StatusBadge = ({ status }) => {
+            const styles = {
+                available: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                away: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+                busy: "bg-amber-500/10 text-amber-400 border-amber-500/20"
+            };
+            const labels = {
+                available: "✨ 接受预约",
+                away: "☕ 暂时离开",
+                busy: "🔥 项目忙碌"
+            };
+            return (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.away}`}>
+                    {labels[status]}
+                </span>
+            );
+        };
+
+        const ImageWithFallback = ({ src, alt, className, fallbackText }) => {
+            const [error, setError] = useState(false);
+            useEffect(() => { setError(false); }, [src]);
+
+            if (error || !src) {
+                const fallbackSrc = `https://api.dicebear.com/7.x/initials/svg?seed=${fallbackText || 'User'}&backgroundColor=52525b&textColor=d4d4d8`;
+                return <img src={fallbackSrc} alt={alt} className={className} />;
+            }
+            return <img src={src} alt={alt} className={className} onError={() => setError(true)} />;
+        };
+
+        // --- 主程序 ---
+
+        function App() {
+            const [viewMode, setViewMode] = useState('landing');
+            const [searchTerm, setSearchTerm] = useState("");
+            const [teamMembers, setTeamMembers] = useState(INITIAL_TEAM);
+            const [filteredList, setFilteredList] = useState(INITIAL_TEAM);
+            const [siteConfig, setSiteConfig] = useState(INITIAL_CONFIG);
+            const [selectedPerson, setSelectedPerson] = useState(null);
+            const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+            
+            // 状态管理
+            const [isEditingBio, setIsEditingBio] = useState(false);
+            const [tempBio, setTempBio] = useState("");
+            const [isEditingTags, setIsEditingTags] = useState(false);
+            const [tempTags, setTempTags] = useState([]);
+            const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+            const [tempPhotoUrl, setTempPhotoUrl] = useState("");
+            const [isEditingInfo, setIsEditingInfo] = useState(false);
+            const [tempName, setTempName] = useState("");
+            const [tempCategory, setTempCategory] = useState("strict");
+
+            const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+            const [showLoginModal, setShowLoginModal] = useState(false);
+            const [showConfigModal, setShowConfigModal] = useState(false);
+            const [passwordInput, setPasswordInput] = useState("");
+            const [loginError, setLoginError] = useState(false);
+
+            const [newMember, setNewMember] = useState({
+                name: "", category: "strict", role: "", department: "", bio: "", id: "", photo: "" 
+            });
+
+            useEffect(() => {
+                const lowerTerm = searchTerm.toLowerCase();
+                const results = teamMembers.filter(person => 
+                    (person.name || "").toLowerCase().includes(lowerTerm) || 
+                    (person.role || "").toLowerCase().includes(lowerTerm) ||
+                    (person.tags || []).some(tag => tag.toLowerCase().includes(lowerTerm))
+                );
+                setFilteredList(results);
+            }, [searchTerm, teamMembers]);
+
+            useEffect(() => {
+                if (selectedPerson) {
+                    setTempBio(selectedPerson.bio || "");
+                    setTempTags(selectedPerson.tags || []);
+                    setTempPhotoUrl(selectedPerson.photo || "");
+                    setTempName(selectedPerson.name || "");
+                    setTempCategory(selectedPerson.category || "strict");
+                    setIsEditingBio(false); setIsEditingTags(false); setIsEditingPhoto(false); setIsEditingInfo(false);
+                }
+            }, [selectedPerson]);
+
+            const showToast = (message, type = "success") => {
+                setToast({ show: false, message: "", type: "success" });
+                setTimeout(() => {
+                    setToast({ show: true, message, type });
+                    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+                }, 100);
+            };
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (passwordInput === ADMIN_PASSWORD) {
+                    setViewMode('admin');
+                    setShowLoginModal(false);
+                    setPasswordInput("");
+                    setLoginError(false);
+                    showToast("欢迎回来，管理员", "success");
+                } else {
+                    setLoginError(true);
+                    const input = document.getElementById('password-input');
+                    if (input) {
+                        input.classList.add('animate-shake');
+                        setTimeout(() => input.classList.remove('animate-shake'), 300);
+                    }
+                }
+            };
+
+            const updateMember = (updates) => {
+                if (!selectedPerson) return;
+                const updatedMembers = teamMembers.map(member => 
+                    member.id === selectedPerson.id ? { ...member, ...updates } : member
+                );
+                setTeamMembers(updatedMembers);
+                setSelectedPerson({ ...selectedPerson, ...updates });
+            };
+
+            // 操作函数
+            const handleSaveBio = () => { updateMember({ bio: tempBio }); setIsEditingBio(false); showToast("简介已更新", "success"); };
+            const handleChangeStatus = (newStatus) => { updateMember({ status: newStatus }); showToast("状态已更新", "success"); };
+            const toggleTagSelection = (tag) => { if (tempTags.includes(tag)) { setTempTags(tempTags.filter(t => t !== tag)); } else { setTempTags([...tempTags, tag]); } };
+            const handleSaveTags = () => { updateMember({ tags: tempTags }); setIsEditingTags(false); showToast("标签已更新", "success"); };
+            const handleSaveInfo = () => { updateMember({ name: tempName, category: tempCategory }); setIsEditingInfo(false); showToast("基本信息已更新", "success"); };
+            const handleSavePhoto = () => { updateMember({ photo: tempPhotoUrl }); setIsEditingPhoto(false); showToast("头像已更新", "success"); };
+            
+            const generateRandomAvatar = () => {
+                const randomSeed = Math.random().toString(36).substring(7);
+                setTempPhotoUrl(`https://api.dicebear.com/7.x/avataaars/svg?seed=${randomSeed}`);
+            };
+
+            const handleImageUpload = (e, callback) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) { showToast("文件过大", "error"); return; }
+                    const reader = new FileReader();
+                    reader.onloadend = () => callback(reader.result);
+                    reader.readAsDataURL(file);
+                }
+                e.target.value = '';
+            };
+
+            const handleAddMember = (e) => {
+                e.preventDefault();
+                const id = newMember.id || `HZ-${Math.floor(Math.random() * 10000)}`;
+                const finalPhoto = newMember.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${newMember.name}&backgroundColor=e1e1e1`;
+                const newPerson = { ...newMember, id, status: "available", rating: 5.0, projectCount: 0, experience: "新晋成员", location: "综合办公区", tags: newMember.tags || ["新成员"], photo: finalPhoto };
+                setTeamMembers([...teamMembers, newPerson]);
+                setShowAddMemberModal(false);
+                setNewMember({ name: "", category: "strict", role: "", department: "", bio: "", id: "", photo: "" });
+                showToast(`成功添加成员`, "success");
+            };
+
+            const handleConfigUpdate = (section, key, value) => {
+                setSiteConfig(prev => ({
+                    ...prev,
+                    [section]: { ...prev[section], [key]: value }
+                }));
+            };
+
+            const handleVisitorAction = (type, personName) => {
+                if (type === 'like') { showToast(`您点赞了 ${personName}！`, "success"); } else { showToast(`已发起咨询请求...`, "info"); }
+            };
+
+            const isAdmin = viewMode === 'admin';
+            const headerBgClass = "bg-zinc-950/80 backdrop-blur-md border-zinc-800";
+            const headerTextClass = "text-white";
+            const headerPadding = "py-3 md:py-4"; // 移动端减小Padding
+
+            const sections = [
+                { key: 'boss', title: siteConfig.sections.bossTitle, subtitle: siteConfig.sections.bossSubtitle, icon: <Crown className="w-6 h-6 text-amber-500" />, headerStyle: "bg-gradient-to-r from-amber-950/40 to-zinc-900 border-amber-900/50 text-amber-50" },
+                { key: 'strict', title: siteConfig.sections.strictTitle, subtitle: siteConfig.sections.strictSubtitle, icon: <Gavel className="w-6 h-6 text-indigo-400" />, headerStyle: "bg-zinc-900 text-zinc-100 border-zinc-800" }
+            ];
+
+            const Banner = () => (
+                <div className="relative mb-12 rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl">
+                    <div className="absolute inset-0 opacity-40">
+                        <img src="https://images.unsplash.com/photo-1526566762798-8fac9c07aa98?auto=format&fit=crop&q=80" alt="Ink Texture" className="w-full h-full object-cover grayscale invert contrast-125" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/80 to-transparent"></div>
+                    </div>
+                    {/* 针对手机端调整汉责文字大小 */}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none select-none">
+                        <span className="text-[4rem] sm:text-[6rem] md:text-[12rem] font-bold text-white leading-none writing-vertical-rl tracking-widest rotate-6 mix-blend-overlay font-shufa">
+                        {siteConfig.landing.mainTitle}
+                        </span>
+                    </div>
+                    <div className="relative z-10 p-6 md:p-10 flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                                <div className="p-2 bg-indigo-600 rounded-lg"><Briefcase className="w-5 h-5 md:w-6 md:h-6 text-white"/></div>
+                                {isAdmin ? siteConfig.banner.adminTitle : siteConfig.banner.visitorTitle}
+                            </h2>
+                            <p className="text-zinc-400 text-xs md:text-sm max-w-lg">
+                                {isAdmin ? siteConfig.banner.adminDesc : siteConfig.banner.visitorDesc}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-xs md:text-sm text-zinc-400 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 font-medium flex items-center gap-2">
+                                <Users className="w-4 h-4 text-indigo-400" />
+                                在职人数: <span className="text-white font-bold">{filteredList.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            if (viewMode === 'landing') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-black">
+                        <div className="absolute inset-0 z-0 bg-black"></div>
+                        <button onClick={() => setShowLoginModal(true)} className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all text-xs md:text-sm font-medium border border-white/5 hover:border-white/20 backdrop-blur-md">
+                            <Lock className="w-3 h-3 md:w-4 md:h-4" /> <span>管理员登录</span>
+                        </button>
+                        <div className="max-w-5xl w-full z-10 flex flex-col items-center">
+                            <button onClick={() => setViewMode('visitor')} className="group relative w-full max-w-3xl aspect-[4/3] md:aspect-video bg-zinc-900/30 backdrop-blur-sm rounded-3xl border border-zinc-800/50 hover:border-zinc-700 p-8 md:p-16 text-left transition-all duration-700 hover:shadow-2xl hover:scale-105 overflow-hidden flex flex-col justify-center items-center">
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                <div className="relative z-10 flex flex-col items-center text-center space-y-4 md:space-y-8">
+                                    <div className="space-y-4">
+                                        <div className="relative inline-block">
+                                            <h1 className="text-5xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500 tracking-widest drop-shadow-lg font-shufa">
+                                            {siteConfig.landing.mainTitle}
+                                            </h1>
+                                            <div className="absolute -top-2 -right-8 md:-top-3 md:-right-16 w-8 h-8 md:w-10 md:h-10 bg-red-900/90 rounded-md shadow-lg flex items-center justify-center rotate-6 border border-red-800/50 hover:scale-110 transition-transform duration-500">
+                                                <div className="w-[85%] h-[85%] border border-red-300/30 rounded-sm flex items-center justify-center">
+                                                    <span className="text-red-100 text-[10px] md:text-sm font-bold writing-vertical-rl tracking-widest leading-none drop-shadow-sm font-shufa">{siteConfig.landing.stampText}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-3">
+                                            <div className="h-px w-8 md:w-12 bg-zinc-800"></div>
+                                            <p className="text-zinc-500 text-sm md:text-lg font-light tracking-[0.2em] uppercase">{siteConfig.landing.subTitle}</p>
+                                            <div className="h-px w-8 md:w-12 bg-zinc-800"></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 md:space-y-6 max-w-lg pt-2 md:pt-4">
+                                        <p className="text-zinc-400 text-xs md:text-base leading-relaxed font-light tracking-wide whitespace-pre-wrap">{siteConfig.landing.description}</p>
+                                        <div className="flex items-center justify-center gap-2 text-white font-medium text-base md:text-lg group-hover:translate-y-1 transition-transform duration-500">
+                                            <span className="border-b border-zinc-700 pb-1 group-hover:border-white transition-colors">{siteConfig.landing.enterButton}</span> 
+                                            <ChevronRight className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                            <p className="text-zinc-600 text-xs mt-8 md:mt-12 font-light tracking-widest opacity-50">{siteConfig.landing.footer}</p>
+                        </div>
+                        {showLoginModal && (
+                            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-[18rem] p-6 relative scale-100 animate-in zoom-in-95 duration-200">
+                                    <button onClick={() => { setShowLoginModal(false); setPasswordInput(""); setLoginError(false); }} className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-300 transition-colors"><X className="w-4 h-4" /></button>
+                                    <div className="text-center mb-6">
+                                        <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3"><Lock className="w-5 h-5 text-zinc-400" /></div>
+                                        <h2 className="text-lg font-bold text-zinc-200">身份验证</h2>
+                                    </div>
+                                    <form onSubmit={handleLogin} className="space-y-4">
+                                        <div className="relative">
+                                            <input id="password-input" type="password" placeholder="输入管理密码" className={`w-full px-4 py-2.5 text-center text-sm rounded-lg bg-black border focus:outline-none transition-colors ${loginError ? 'border-red-900 text-red-500 placeholder-red-900/50' : 'border-zinc-800 text-white placeholder-zinc-600 focus:border-zinc-600'}`} value={passwordInput} onChange={(e) => { setPasswordInput(e.target.value); setLoginError(false); }} autoFocus />
+                                        </div>
+                                        <button type="submit" className="w-full bg-white hover:bg-zinc-200 text-black font-bold py-2.5 text-sm rounded-lg transition-all active:scale-95">确认</button>
+                                        {loginError && <p className="text-red-500 text-xs text-center animate-pulse">密码错误</p>}
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-zinc-950 font-sans text-zinc-200 selection:bg-indigo-500/30">
+                    <header className={`${headerBgClass} sticky top-0 z-40 border-b transition-all duration-300`}>
+                        <div className={`max-w-6xl mx-auto px-4 ${headerPadding} flex flex-col md:flex-row justify-between items-center gap-4`}>
+                            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-1.5 md:p-2 rounded-xl shadow-lg ${isAdmin ? 'bg-amber-600 shadow-amber-900/30 scale-90' : 'bg-indigo-600 shadow-indigo-900/30'}`}>
+                                        {isAdmin ? <ShieldAlert className="w-5 h-5 md:w-6 md:h-6 text-black" /> : <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h1 className={`text-lg md:text-xl font-bold tracking-wide ${headerTextClass}`}>{siteConfig.header.title}</h1>
+                                            {isAdmin && <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 text-[10px] rounded border border-amber-500/20 font-bold tracking-wider">ADMIN</span>}
+                                        </div>
+                                        <p className={`text-[10px] md:text-xs tracking-wider ${isAdmin ? 'text-zinc-400' : 'text-zinc-500'}`}>{siteConfig.header.subtitle}</p>
+                                    </div>
+                                </div>
+                                {/* 移动端顶部按钮组 */}
+                                <div className="flex md:hidden items-center gap-2">
+                                    {isAdmin && (
+                                        <>
+                                            <button onClick={() => setShowAddMemberModal(true)} className="p-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-500"><Plus className="w-4 h-4" /></button>
+                                            <button onClick={() => setShowConfigModal(true)} className="p-2 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300"><Settings className="w-4 h-4" /></button>
+                                        </>
+                                    )}
+                                    <button onClick={() => setViewMode('landing')} className="p-2 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300"><LogOut className="w-4 h-4" /></button>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                {/* 桌面端按钮 */}
+                                <div className="hidden md:flex gap-2">
+                                    {isAdmin && (
+                                        <>
+                                            <button onClick={() => setShowAddMemberModal(true)} className="flex items-center gap-2 px-3 py-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all text-sm font-medium whitespace-nowrap"><Plus className="w-4 h-4" /> 添加成员</button>
+                                            <button onClick={() => setShowConfigModal(true)} className="flex items-center gap-2 px-3 py-2 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all text-sm font-medium whitespace-nowrap" title="全局设置"><Settings className="w-4 h-4" /> 设置</button>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="relative flex-1 md:w-64">
+                                    <input type="text" placeholder="搜索..." className="w-full pl-9 pr-4 py-2 rounded-full text-sm focus:outline-none focus:ring-2 transition-all shadow-inner border bg-zinc-900 text-white placeholder-zinc-500 border-zinc-800 focus:bg-zinc-800 focus:ring-indigo-500/50" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                                </div>
+                                <button onClick={() => setViewMode('landing')} className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full transition-all border shadow-sm active:scale-95 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white" title="退出并返回首页"><ArrowLeft className="w-4 h-4" /><span className="text-xs font-bold hidden sm:inline">返回首页</span></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+                        <Banner />
+                        <div className="space-y-12">
+                            {sections.map(section => {
+                                const sectionMembers = filteredList.filter(m => m.category === section.key);
+                                if (sectionMembers.length === 0) return null;
+                                return (
+                                    <div key={section.key} className="animate-in fade-in duration-500">
+                                        <div className={`rounded-xl p-4 md:p-5 mb-6 shadow-md border-l-4 flex items-center justify-between ${section.headerStyle}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-1.5 md:p-2 rounded-lg ${section.key === 'boss' ? 'bg-amber-950/50 border border-amber-900/50' : 'bg-zinc-800 border border-zinc-700'}`}>
+                                                    {section.icon}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg md:text-xl font-bold tracking-tight">{section.title}</h3>
+                                                    <p className={`text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium ${section.key === 'boss' ? 'text-amber-400/70' : 'text-zinc-500'}`}>{section.subtitle}</p>
+                                                </div>
+                                            </div>
+                                            <div className={`text-xs md:text-sm font-bold px-2 py-1 md:px-3 rounded-full ${section.key === 'boss' ? 'bg-amber-900/30 text-amber-400' : 'bg-indigo-900/30 text-indigo-400'}`}>
+                                                {sectionMembers.length} 人
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {sectionMembers.map((person) => (
+                                                <div key={person.id} onClick={() => setSelectedPerson(person)} className={`bg-zinc-900 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300 border overflow-hidden cursor-pointer group flex flex-col h-full ${person.category === 'boss' ? 'border-amber-900/30 hover:border-amber-700/50' : 'border-zinc-800 hover:border-indigo-500/30'} ${isAdmin ? 'hover:ring-1 hover:ring-amber-500/50' : ''}`}>
+                                                    {/* 修复：移除 overflow-hidden，让头像可以“溢出”悬挂 */}
+                                                    <div className={`relative h-28 bg-gradient-to-br ${person.category === 'boss' ? 'from-amber-950 to-zinc-900' : 'from-indigo-950 to-zinc-900'}`}>
+                                                        <div className="absolute inset-0 bg-white/5"></div>
+                                                        {person.category === 'boss' && <div className="absolute top-2 right-2 text-amber-500/20"><Crown className="w-16 h-16 rotate-12" /></div>}
+                                                        {/* 头像容器：提升 z-index 确保显示 */}
+                                                        <div className="absolute -bottom-10 left-6 z-20">
+                                                            <ImageWithFallback src={person.photo} alt={person.name} fallbackText={person.name} className={`w-20 h-20 rounded-full object-cover border-4 shadow-xl ${person.category === 'boss' ? 'border-amber-700' : 'border-zinc-800'}`} />
+                                                            <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-zinc-900 ${person.status === 'available' ? 'bg-emerald-500' : person.status === 'busy' ? 'bg-amber-500' : 'bg-zinc-500'}`}></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="pt-12 px-6 pb-6 flex-1 flex flex-col relative z-10">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h3 className={`text-xl font-bold transition-colors ${person.category === 'boss' ? 'text-amber-100' : 'text-zinc-100 group-hover:text-indigo-400'}`}>{person.name}</h3>
+                                                                <div className="h-1"></div>
+                                                            </div>
+                                                            <StatusBadge status={person.status} />
+                                                        </div>
+                                                        <div className="mb-4 text-sm text-zinc-400 line-clamp-2 relative pl-3 border-l-2 border-zinc-700">{person.bio || "暂无简介"}</div>
+                                                        <div className="flex flex-wrap gap-2 mb-5">
+                                                            {(person.tags || []).slice(0, 2).map(tag => (
+                                                                <span key={tag} className="text-xs text-zinc-400 bg-zinc-800/50 px-2.5 py-1 rounded-full border border-zinc-700/50">#{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                        <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-between items-center text-sm">
+                                                            <div className="flex items-center gap-1 text-amber-500 font-bold"><Star className="w-4 h-4 fill-current" /> {person.rating}</div>
+                                                        </div>
+                                                        {isAdmin && <div className="mt-2 text-center py-1 bg-amber-900/10 text-amber-500 text-xs rounded border border-amber-900/20 font-medium">点击管理</div>}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {filteredList.length === 0 && (
+                                <div className="text-center py-24 bg-zinc-900 rounded-2xl border border-dashed border-zinc-800">
+                                    <Search className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
+                                    <h3 className="text-lg font-medium text-zinc-500">未找到相关成员</h3>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {selectedPerson && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                            <div className="bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative ring-1 ring-zinc-800">
+                                <button onClick={() => setSelectedPerson(null)} className="absolute top-4 right-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-full p-2 transition-colors z-10"><X className="w-5 h-5" /></button>
+                                <div className="flex flex-col md:flex-row h-full overflow-hidden">
+                                    <div className={`p-8 flex flex-col items-center text-center md:w-2/5 border-r border-zinc-800 overflow-y-auto ${selectedPerson.category === 'boss' ? 'bg-zinc-950 text-white' : 'bg-zinc-950 text-zinc-200'}`}>
+                                        <div className="relative group">
+                                            <ImageWithFallback src={isEditingPhoto ? tempPhotoUrl : selectedPerson.photo} alt={selectedPerson.name} fallbackText={selectedPerson.name} className={`w-36 h-36 rounded-full border-8 shadow-xl mb-4 object-cover ${selectedPerson.category === 'boss' ? 'border-amber-700' : 'border-zinc-800'}`} />
+                                            <div className={`absolute bottom-6 right-2 w-6 h-6 rounded-full border-4 border-zinc-950 ${selectedPerson.status === 'available' ? 'bg-emerald-500' : selectedPerson.status === 'busy' ? 'bg-amber-500' : 'bg-zinc-500'}`}></div>
+                                            {isAdmin && !isEditingPhoto && <button onClick={() => { setIsEditingPhoto(true); setTempPhotoUrl(selectedPerson.photo); }} className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera className="w-8 h-8 text-white" /></button>}
+                                        </div>
+                                        {isEditingPhoto && (
+                                            <div className="w-full mb-4 space-y-2">
+                                                <div className="flex flex-col gap-2">
+                                                    <input type="text" className="w-full text-xs bg-black border border-zinc-700 rounded px-2 py-1 text-white" placeholder="输入图片链接..." value={tempPhotoUrl} onChange={(e) => setTempPhotoUrl(e.target.value)} />
+                                                    <div className="flex gap-2 w-full">
+                                                        <label className="flex-1 p-1 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-300 cursor-pointer flex items-center justify-center text-xs gap-1 border border-zinc-700 transition-colors" title="本地上传"><Upload className="w-3 h-3"/> 本地上传<input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleImageUpload(e, setTempPhotoUrl)} /></label>
+                                                        <button onClick={generateRandomAvatar} className="px-2 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-300 border border-zinc-700" title="随机生成"><RefreshCw className="w-3 h-3"/></button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 justify-center pt-1">
+                                                    <button onClick={() => setIsEditingPhoto(false)} className="text-xs px-3 py-1 bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors">取消</button>
+                                                    <button onClick={handleSavePhoto} className="text-xs px-3 py-1 bg-indigo-600 rounded text-white hover:bg-indigo-500 transition-colors">保存</button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center justify-center gap-2">
+                                            {isEditingInfo ? (
+                                                <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} className="text-xl font-bold bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-center w-full focus:outline-none focus:border-indigo-500 text-white" />
+                                            ) : (
+                                                <h2 className="text-2xl font-bold">{selectedPerson.name}</h2>
+                                            )}
+                                            {isAdmin && !isEditingInfo && <button onClick={() => setIsEditingInfo(true)} className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors" title="修改基本信息"><Edit3 className="w-4 h-4" /></button>}
+                                        </div>
+                                        {isEditingInfo && (
+                                            <div className="w-full mt-2 space-y-2">
+                                                <select value={tempCategory} onChange={(e) => setTempCategory(e.target.value)} className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none focus:border-indigo-500">
+                                                    <option value="strict">严厉监督员</option>
+                                                    <option value="boss">BOSS 监督员</option>
+                                                </select>
+                                                <div className="flex gap-2 justify-center">
+                                                    <button onClick={() => setIsEditingInfo(false)} className="text-xs px-2 py-1 bg-zinc-800 rounded text-zinc-400 hover:text-white">取消</button>
+                                                    <button onClick={handleSaveInfo} className="text-xs px-2 py-1 bg-indigo-600 rounded text-white hover:bg-indigo-500">保存</button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="mb-6"></div>
+                                        {isAdmin && (
+                                            <div className="w-full mb-6 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+                                                <p className="text-xs text-zinc-500 mb-2 uppercase tracking-widest font-bold">修改状态</p>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {STATUS_OPTIONS.map(opt => (
+                                                        <button key={opt.value} onClick={() => handleChangeStatus(opt.value)} className={`text-xs py-1.5 rounded-lg border transition-all flex items-center justify-center gap-2 ${selectedPerson.status === opt.value ? 'bg-amber-600 text-black border-amber-500 font-bold shadow-lg' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'}`}>
+                                                            {selectedPerson.status === opt.value && <CheckCircle2 className="w-3 h-3"/>} {opt.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {!isAdmin && (
+                                            <div className="w-full space-y-3 text-left">
+                                                <div className={`p-3.5 rounded-xl shadow-sm border ${selectedPerson.category === 'boss' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-zinc-800'}`}>
+                                                    <p className="text-xs mb-1 uppercase tracking-wider text-zinc-500">工号 / ID</p>
+                                                    <p className="font-semibold flex items-center gap-2"><BadgeCheck className={`w-4 h-4 ${selectedPerson.category === 'boss' ? 'text-amber-500' : 'text-indigo-400'}`} /> {selectedPerson.id}</p>
+                                                </div>
+                                                <div className={`p-3.5 rounded-xl shadow-sm border ${selectedPerson.category === 'boss' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-zinc-800'}`}>
+                                                    <p className="text-xs mb-1 uppercase tracking-wider text-zinc-500">客户评价</p>
+                                                    <p className="font-semibold flex items-center gap-2"><Star className="w-4 h-4 text-amber-500 fill-amber-500" /> {selectedPerson.rating}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-8 md:w-3/5 flex-1 overflow-y-auto bg-zinc-900 text-zinc-200">
+                                        <div className="mb-8">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h3 className="text-lg font-bold flex items-center gap-2"><Quote className={`w-5 h-5 ${selectedPerson.category === 'boss' ? 'text-amber-600' : 'text-indigo-500'}`}/> 个人简介</h3>
+                                                {isAdmin && (
+                                                    !isEditingBio ? (
+                                                        <button onClick={() => setIsEditingBio(true)} className="text-xs flex items-center gap-1 px-2 py-1 bg-amber-900/30 hover:bg-amber-900/50 text-amber-500 border border-amber-900/50 rounded transition-colors font-medium"><Pencil className="w-3 h-3" /> 修改简介</button>
+                                                    ) : (
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => setIsEditingBio(false)} className="text-xs flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors"><RotateCcw className="w-3 h-3" /> 取消</button>
+                                                            <button onClick={handleSaveBio} className="text-xs flex items-center gap-1 px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors"><Save className="w-3 h-3" /> 保存</button>
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            {isEditingBio ? (
+                                                <textarea className="w-full h-32 p-3 text-sm text-zinc-200 border-2 border-indigo-900/50 bg-zinc-950 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-900/20 transition-all outline-none resize-none" value={tempBio} onChange={(e) => setTempBio(e.target.value)} placeholder="请输入新的简介内容..." />
+                                            ) : (
+                                                <p className="text-zinc-400 leading-relaxed text-sm text-justify animate-in fade-in">{selectedPerson.bio || "暂无简介"}</p>
+                                            )}
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h3 className="text-lg font-bold flex items-center gap-2"><Sparkles className={`w-5 h-5 ${selectedPerson.category === 'boss' ? 'text-amber-600' : 'text-indigo-500'}`}/> 专业标签</h3>
+                                                {isAdmin && (
+                                                    !isEditingTags ? (
+                                                        <button onClick={() => setIsEditingTags(true)} className="text-xs flex items-center gap-1 px-2 py-1 bg-amber-900/30 hover:bg-amber-900/50 text-amber-500 border border-amber-900/50 rounded transition-colors font-medium"><Tag className="w-3 h-3" /> 修改标签</button>
+                                                    ) : (
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => setIsEditingTags(false)} className="text-xs flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors"><RotateCcw className="w-3 h-3" /> 取消</button>
+                                                            <button onClick={handleSaveTags} className="text-xs flex items-center gap-1 px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors"><Save className="w-3 h-3" /> 保存</button>
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            {isEditingTags ? (
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                                                    {AVAILABLE_TAGS.map(tag => (
+                                                        <button key={tag} onClick={() => toggleTagSelection(tag)} className={`text-xs px-2 py-2 rounded-lg border transition-all text-center ${tempTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-300'}`}>{tag}</button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {(selectedPerson.tags || []).map(tag => (
+                                                        <span key={tag} className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${selectedPerson.category === 'boss' ? 'bg-amber-900/20 text-amber-500 border-amber-900/30' : 'bg-indigo-900/20 text-indigo-400 border-indigo-900/30'}`}>{tag}</span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        {!isAdmin && (
+                                            <div className="mt-auto space-y-3 pt-4 border-t border-zinc-800">
+                                                <button onClick={() => handleVisitorAction('like', selectedPerson.name)} className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 text-white shadow-lg ${selectedPerson.category === 'boss' ? 'bg-amber-700 hover:bg-amber-600 shadow-amber-900/20' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/20'}`}><ThumbsUp className="w-5 h-5" /> 认可 / 点赞</button>
+                                                <button onClick={() => handleVisitorAction('contact', selectedPerson.name)} className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-zinc-300 bg-zinc-800 border-2 border-zinc-700 hover:border-indigo-500 hover:bg-zinc-700 hover:text-white transition-all active:scale-95"><MessageCircle className="w-5 h-5" /> 咨询 / 预约</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 全局配置弹窗 */}
+                    {showConfigModal && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                            <div className="bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl p-6 relative ring-1 ring-zinc-800 max-h-[90vh] overflow-y-auto">
+                                <button onClick={() => setShowConfigModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5"/></button>
+                                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Settings className="w-5 h-5 text-indigo-500"/> 全局文字配置</h2>
+                                <div className="space-y-6">
+                                    <div className="space-y-4 border-b border-zinc-800 pb-6">
+                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">首页 (Landing Page)</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-xs text-zinc-500 block mb-1">主标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.landing.mainTitle} onChange={e => handleConfigUpdate('landing', 'mainTitle', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">印章文字</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.landing.stampText} onChange={e => handleConfigUpdate('landing', 'stampText', e.target.value)} /></div>
+                                            <div className="col-span-2"><label className="text-xs text-zinc-500 block mb-1">副标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.landing.subTitle} onChange={e => handleConfigUpdate('landing', 'subTitle', e.target.value)} /></div>
+                                            <div className="col-span-2"><label className="text-xs text-zinc-500 block mb-1">描述语</label><textarea className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none h-16 resize-none" value={siteConfig.landing.description} onChange={e => handleConfigUpdate('landing', 'description', e.target.value)} /></div>
+                                            <div className="col-span-2"><label className="text-xs text-zinc-500 block mb-1">页脚版权</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.landing.footer} onChange={e => handleConfigUpdate('landing', 'footer', e.target.value)} /></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 border-b border-zinc-800 pb-6">
+                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">顶部导航 (Header)</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-xs text-zinc-500 block mb-1">Logo 标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.header.title} onChange={e => handleConfigUpdate('header', 'title', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">Logo 副标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.header.subtitle} onChange={e => handleConfigUpdate('header', 'subtitle', e.target.value)} /></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 border-b border-zinc-800 pb-6">
+                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">横幅 (Banner)</h3>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div><label className="text-xs text-zinc-500 block mb-1">访客模式标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.banner.visitorTitle} onChange={e => handleConfigUpdate('banner', 'visitorTitle', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">访客模式描述</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.banner.visitorDesc} onChange={e => handleConfigUpdate('banner', 'visitorDesc', e.target.value)} /></div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">分区标题 (Sections)</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-xs text-zinc-500 block mb-1">BOSS区 标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.sections.bossTitle} onChange={e => handleConfigUpdate('sections', 'bossTitle', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">BOSS区 副标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.sections.bossSubtitle} onChange={e => handleConfigUpdate('sections', 'bossSubtitle', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">普通区 标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.sections.strictTitle} onChange={e => handleConfigUpdate('sections', 'strictTitle', e.target.value)} /></div>
+                                            <div><label className="text-xs text-zinc-500 block mb-1">普通区 副标题</label><input type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={siteConfig.sections.strictSubtitle} onChange={e => handleConfigUpdate('sections', 'strictSubtitle', e.target.value)} /></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="sticky bottom-0 pt-4 bg-zinc-900 border-t border-zinc-800 mt-6">
+                                    <button onClick={() => { setShowConfigModal(false); showToast("全站配置已保存", "success"); }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-colors">完成配置</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddMemberModal && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                            <div className="bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md p-6 relative ring-1 ring-zinc-800 max-h-[90vh] overflow-y-auto">
+                                <button onClick={() => setShowAddMemberModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5"/></button>
+                                <h2 className="text-xl font-bold text-white mb-6">添加新成员</h2>
+                                <form onSubmit={handleAddMember} className="space-y-4">
+                                    <div className="flex justify-center mb-4">
+                                        <div className="relative group w-24 h-24">
+                                            <div className="w-full h-full rounded-full overflow-hidden border-2 border-zinc-700 bg-zinc-800">
+                                                <ImageWithFallback src={newMember.photo} alt="Preview" fallbackText={newMember.name} className="w-full h-full object-cover" />
+                                            </div>
+                                            <label className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                                <div className="flex flex-col items-center"><Camera className="w-6 h-6 text-white mb-1" /><span className="text-[10px] text-white font-medium">上传照片</span></div>
+                                                <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={(e) => handleImageUpload(e, (url) => setNewMember({...newMember, photo: url}))} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div><label className="text-xs text-zinc-500 block mb-1">姓名</label><input required type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} /></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-xs text-zinc-500 block mb-1">职位</label><input required type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})} /></div>
+                                        <div><label className="text-xs text-zinc-500 block mb-1">部门</label><input required type="text" className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})} /></div>
+                                    </div>
+                                    <div><label className="text-xs text-zinc-500 block mb-1">类别</label><select className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none" value={newMember.category} onChange={e => setNewMember({...newMember, category: e.target.value})}><option value="strict">严厉监督员</option><option value="boss">BOSS 监督员</option></select></div>
+                                    <div><label className="text-xs text-zinc-500 block mb-1">简介</label><textarea required className="w-full bg-black border border-zinc-800 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none h-24 resize-none" value={newMember.bio} onChange={e => setNewMember({...newMember, bio: e.target.value})} /></div>
+                                    <div><label className="text-xs text-zinc-500 block mb-2">初始标签 (可选)</label><div className="flex flex-wrap gap-2">{["新成员", "严格", "温柔"].map(tag => (<button type="button" key={tag} onClick={() => { const currentTags = newMember.tags || []; if (currentTags.includes(tag)) { setNewMember({...newMember, tags: currentTags.filter(t => t !== tag)}); } else { setNewMember({...newMember, tags: [...currentTags, tag]}); } }} className={`text-xs px-2 py-1 rounded border transition-colors ${newMember.tags?.includes(tag) ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-black border-zinc-800 text-zinc-500'}`}>{tag}</button>))}</div></div>
+                                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl mt-4 transition-colors">确认添加</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {toast.show && (
+                        <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl text-white font-medium flex items-center gap-3 animate-bounce-in z-50 border border-white/10 ${toast.type === 'success' ? 'bg-emerald-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-zinc-800'}`}>
+                            {toast.type === 'success' ? <CheckCircle2 className="w-6 h-6"/> : toast.type === 'error' ? <AlertCircle className="w-6 h-6"/> : <AlertTriangle className="w-6 h-6"/>}
+                            <div><p>{toast.message}</p></div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
